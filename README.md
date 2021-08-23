@@ -1,0 +1,2 @@
+# HostedYaml
+Hosted Bitrise Yaml.
