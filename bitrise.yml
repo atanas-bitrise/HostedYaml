@@ -16,6 +16,10 @@ workflows:
     - script@1:
         title: Do anything with Script step
     - deploy-to-bitrise-io@1: {}
+    meta:
+      bitrise.io:
+        stack: osx-xcode-13.0.x
+        machine_type_id: elite
   4core:
     before_run:
     - primary
