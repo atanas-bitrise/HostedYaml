@@ -1,43 +1,292 @@
 ---
-format_version: '11'
+format_version: '7'
 default_step_lib_source: 'https://github.com/bitrise-io/bitrise-steplib.git'
-project_type: other
+project_type: flutter
 trigger_map:
-- push_branch: '*'
-  workflow: primary
+- push_branch: v*
+  workflow: deploy_firebase
+- push_branch: master
+  workflow: test
 - pull_request_source_branch: '*'
-  workflow: primary
+  workflow: test
 workflows:
-  primary:
+  deploy_android:
     steps:
-    - activate-ssh-key@4:
+    - activate-ssh-key@4.1:
         run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
-    - git-clone@6: {}
-    - script@1:
-        title: Do anything with Script step
-    - deploy-to-bitrise-io@1: {}
-  4core:
-    before_run:
-    - primary
+    - git-clone: {}
+    - flutter-installer:
+        inputs:
+        - is_update: 'false'
+        - installation_bundle_url: $FLUTTER_VERSION_URL
+        - version: ''
+    - script@1.2:
+        inputs:
+        - content: |-
+            cd packages/sage_flutter/
+            flutter pub get
+        title: 'Get packages'
+    - script:
+        title: Integrate translations
+        inputs:
+        - content: bash ./scripts/setup_translations.sh
+    - flutter-build@0.14.0:
+        inputs:
+        - project_location: $BITRISE_FLUTTER_PROJECT_LOCATION
+        - android_additional_params: '--release --build-number=$BITRISE_BUILD_NUMBER'
+        - platform: android
+        - android_output_type: appbundle
+    - sign-apk@1.7.6:
+        inputs:
+        - debuggable_permitted: false
+    - google-play-deploy@3.7.2:
+        inputs:
+        - package_name: qwer.qwert
+        - app_path: $BITRISE_SIGNED_AAB_PATH
+        - whatsnews_dir: ./android/app/whatsnew
+        - track: internal
+        - service_account_json_key_path: $BITRISEIO_BITRISEIO_SERVICE_ACCOUNT_JSON_KEY_URL
+    - send-microsoft-teams-message@0.1.0:
+        inputs:
+        - fields: |-
+            App|${BITRISE_APP_TITLE}
+            Workflow|${BITRISE_TRIGGERED_WORKFLOW_ID}
+            Branch|${BITRISE_GIT_BRANCH}
+            Tag|${BITRISE_GIT_TAG}
+            Message|${BITRISE_GIT_MESSAGE}
+            Build|${BITRISE_BUILD_NUMBER}
+        - buttons: 'View Build|${BITRISE_BUILD_URL}'
+        - buttons_on_error: 'View Build|${BITRISE_BUILD_URL}'
+        - title: Build Succeeded! App Deployed to Android PlayStore
+        - webhook_url: $TEAMS_WEB_HOOK
+    - git-tag@1.1.0:
+        inputs:
+        - tag_message: CI Build
+        - tag: androidAppStore-$BITRISE_BUILD_NUMBER
+    - deploy-to-bitrise-io@2.0.1:
+        inputs:
+        - is_enable_public_page: 'false'
     meta:
       bitrise.io:
-        stack: osx-xcode-12.5.x
-        machine_type_id: g2.4core
-  8core:
-    before_run:
-    - primary
+        stack: osx-xcode-13.1.x
+  deploy_firebase:
+    steps:
+    - activate-ssh-key@4.1:
+        run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+        inputs:
+        - verbose: 'true'
+    - git-clone: {}
+    - flutter-installer:
+        inputs:
+        - is_update: 'false'
+        - installation_bundle_url: $FLUTTER_VERSION_URL
+        - version: ''
+    - script@1.2:
+        inputs:
+        - content: |-
+            cd packages/flutter/
+            flutter pub get
+        title: 'Get packages'
+    - script:
+        title: Integrate translations
+        inputs:
+        - content: bash ./scripts/setup_translations.sh mock
+    - flutter-build@0.14.0:
+        inputs:
+        - project_location: $BITRISE_FLUTTER_PROJECT_LOCATION
+        - ios_additional_params: '--release --no-codesign --build-number=$BITRISE_BUILD_NUMBER'
+        - android_additional_params: '--release --build-number=$BITRISE_BUILD_NUMBER'
+        - android_output_type: appbundle
+    - sign-apk@1.7.6:
+        inputs:
+        - debuggable_permitted: false
+    - xcode-archive@4.4:
+        inputs:
+        - team_id: AN8YKZK4DA
+        - compile_bitcode: 'no'
+        - upload_bitcode: 'no'
+        - configuration: Release
+        - automatic_code_signing: api-key
+        - distribution_method: ad-hoc
+    - firebase-app-distribution@0.9.1:
+        inputs:
+        - app_path: $BITRISE_IPA_PATH
+        - app: '1:1:ios:1'
+        - release_notes: $BITRISE_GIT_MESSAGE
+        - testers: $IOS_FIREBASE_INVITES
+        - firebase_token: $FIREBASE_CI_TOKEN_PROD
+        title: Firebase App Distribution iOS
+    - firebase-app-distribution@0.9.1:
+        inputs:
+        - app: '1:1:android:1'
+        - app_path: $BITRISE_SIGNED_AAB_PATH
+        - release_notes: $BITRISE_GIT_MESSAGE
+        - testers: $GOOGLE_FIREBASE_INVITES
+        - firebase_token: $FIREBASE_CI_TOKEN_PROD
+        title: Firebase App Distribution Android
+    - git-tag:
+        inputs:
+        - tag: build-$BITRISE_BUILD_NUMBER
+        - tag_message: CI Build
+    - send-microsoft-teams-message@0.1.0:
+        inputs:
+        - title: Build Succeeded - App Sent to Firebase App Distribution!
+        - buttons: 'View Build|${BITRISE_BUILD_URL}'
+        - buttons_on_error: 'View Build|${BITRISE_BUILD_URL}'
+        - fields: |-
+            App|${BITRISE_APP_TITLE}
+            Workflow|${BITRISE_TRIGGERED_WORKFLOW_ID}
+            Branch|${BITRISE_GIT_BRANCH}
+            Tag|${BITRISE_GIT_TAG}
+            Message|${BITRISE_GIT_MESSAGE}
+            Build Number|${BITRISE_BUILD_NUMBER}
+        - webhook_url: $TEAMS_WEB_HOOK
+    - deploy-to-bitrise-io@2.0.1:
+        inputs:
+        - is_enable_public_page: 'false'
     meta:
       bitrise.io:
-        stack: osx-xcode-12.5.x
-        machine_type_id: g2.8core
-  12core:
-    before_run:
-    - primary
+        stack: osx-xcode-13.1.x
+  deploy_ios:
+    steps:
+    - activate-ssh-key@4.1:
+        run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+    - git-clone: {}
+    - flutter-installer@0.11:
+        inputs:
+        - is_update: 'false'
+        - installation_bundle_url: $FLUTTER_VERSION_URL
+        - version: ''
+    - script@1.2:
+        inputs:
+        - content: |-
+            cd packages/flutter/
+            flutter pub get
+        title: 'Get packages'
+    - script:
+        title: Integrate translations
+        inputs:
+        - content: bash ./scripts/setup_translations.sh
+    - flutter-build@0.14.0:
+        inputs:
+        - project_location: $BITRISE_FLUTTER_PROJECT_LOCATION
+        - ios_codesign_identity: ''
+        - ios_additional_params: '--release --no-codesign --build-number=$BITRISE_BUILD_NUMBER'
+        - platform: ios
+    - xcode-archive@4.4:
+        inputs:
+        - team_id: AN8YKZK4DA
+        - compile_bitcode: 'no'
+        - upload_bitcode: 'no'
+        - configuration: Release
+        - automatic_code_signing: api-key
+        - distribution_method: app-store
+    - deploy-to-itunesconnect-application-loader@1.3.1:
+        inputs:
+        - password: $APPLE_ID_PASSWORD
+        - itunescon_user: $APPLE_ID
+    - send-microsoft-teams-message@0.1.0:
+        inputs:
+        - title: Build Succeeded! App deployed to Apple App Store
+        - fields: |-
+            App|${BITRISE_APP_TITLE}
+            Workflow|${BITRISE_TRIGGERED_WORKFLOW_ID}
+            Branch|${BITRISE_GIT_BRANCH}
+            Tag|${BITRISE_GIT_TAG}
+            Message|${BITRISE_GIT_MESSAGE}
+            Build Number|${BITRISE_BUILD_NUMBER}
+        - buttons: 'View Build|${BITRISE_BUILD_URL}'
+        - buttons_on_error: 'View Build|${BITRISE_BUILD_URL}'
+        - webhook_url: $TEAMS_WEB_HOOK
+    - git-tag@1.1.0:
+        inputs:
+        - tag_message: CI Build
+        - tag: appleAppStore-$BITRISE_BUILD_NUMBER
+    - deploy-to-bitrise-io@2.0.1:
+        inputs:
+        - is_enable_public_page: 'false'
     meta:
       bitrise.io:
-        stack: osx-xcode-12.5.x
-        machine_type_id: g2.12core
+        stack: osx-xcode-13.1.x
+  test:
+    steps:
+    - activate-ssh-key@4.1:
+        run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+    - git-clone: {}
+    - flutter-installer@0.11:
+        inputs:
+        - is_update: 'false'
+        - installation_bundle_url: $FLUTTER_VERSION_URL
+        - version: ''
+    - script@1.2:
+        title: 'Get packages for package'
+        inputs:
+        - content: |-
+            cd packages/flutter/
+            flutter pub get
+    - file-downloader@1.1:
+        inputs:
+        - destination: ./test_driver/tests.env
+        - source: $BITRISEIO_INTEGRATION_TESTS_CREDS_URL
+    - script:
+        title: Integrate translations
+        inputs:
+        - content: bash ./scripts/setup_translations.sh mock
+    - script:
+        title: Run Integration tests
+        inputs:
+        - content: bash ./test_driver/test_driver_all.sh
+    - secure-delete-path@2.0:
+        inputs:
+        - path: ./test_driver/tests.env
+        is_always_run: true
+    - send-microsoft-teams-message@0.1.0:
+        inputs:
+        - buttons_on_error: >-
+            View Build|${BITRISE_BUILD_URL}
+
+            View
+            Tests|https://addons-testing.bitrise.io/builds/${$BITRISE_BUILD_SLUG}/summary?status=failed
+        - webhook_url: $TEAMS_WEB_HOOK
+        - fields: |-
+            App|${BITRISE_APP_TITLE}
+            Workflow|${BITRISE_TRIGGERED_WORKFLOW_ID}
+            Branch|${BITRISE_GIT_BRANCH}
+            Tag|${BITRISE_GIT_TAG}
+            Message|${BITRISE_GIT_MESSAGE}
+            Build Number|${BITRISE_BUILD_NUMBER}
+        - buttons: >-
+            View Build|${BITRISE_BUILD_URL}
+
+            View
+            Tests|https://addons-testing.bitrise.io/builds/${$BITRISE_BUILD_SLUG}/summary
+    - deploy-to-bitrise-io@2.0.1:
+        inputs:
+        - is_enable_public_page: 'false'
+    meta:
+      bitrise.io:
+        stack: osx-xcode-13.1.x
+app:
+  envs:
+  - opts:
+      is_expand: false
+    BITRISE_FLUTTER_PROJECT_LOCATION: .
+  - opts:
+      is_expand: false
+    BITRISE_PROJECT_PATH: ios/Runner.xcworkspace
+  - opts:
+      is_expand: false
+    BITRISE_SCHEME: Runner
+  - opts:
+      is_expand: false
+    BITRISE_EXPORT_METHOD: development
+  - opts:
+      is_expand: false
+    IOS_PACKAGE_PATH: ios/SP/SP.xcodeproj
+  - opts:
+      is_expand: false
+    FLUTTER_VERSION_URL: >-
+      https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/flutter_macos_2.8.1-stable.zip
 meta:
   bitrise.io:
-  stack: osx-xcode-12.0.x
-  machine_type_id: elite
+    machine_type_id: g2.4core
