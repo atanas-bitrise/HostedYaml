@@ -208,6 +208,11 @@ workflows:
         stack: osx-xcode-13.1.x
   test:
     steps:
+    - script@1.2:
+        title: 'Title'
+        inputs:
+        - content: |-
+            echo AAA
     - activate-ssh-key@4.1:
         run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
     - git-clone: {}
