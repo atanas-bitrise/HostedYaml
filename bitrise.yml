@@ -220,6 +220,7 @@ workflows:
         title: 'Get packages for carbon package'
         inputs:
         - content: |-
+            echo 1
             cd packages/flutter/
             flutter pub get
     - file-downloader@1.1:
