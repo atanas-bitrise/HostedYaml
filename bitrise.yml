@@ -25,7 +25,7 @@ workflows:
         - content: |-
             cd packages/flutter/
             flutter pub get
-        title: 'Get packages'
+        title: Get packages
     - script:
         title: Integrate translations
         inputs:
@@ -84,7 +84,7 @@ workflows:
         - content: |-
             cd packages/flutter/
             flutter pub get
-        title: 'Get packages'
+        title: Get packages
     - script:
         title: Integrate translations
         inputs:
@@ -145,7 +145,7 @@ workflows:
         - content: |-
             cd packages/flutter/
             flutter pub get
-        title: 'Get packages'
+        title: Get packages
     - script:
         title: Integrate translations
         inputs:
@@ -217,7 +217,7 @@ workflows:
         - installation_bundle_url: "$FLUTTER_VERSION_URL"
         - version: ''
     - script@1.2:
-        title: 'Get packages for carbon package'
+        title: Get packages for carbon package
         inputs:
         - content: |-
             cd packages/flutter/
@@ -259,7 +259,8 @@ workflows:
         - is_enable_public_page: 'false'
     meta:
       bitrise.io:
-        stack: osx-xcode-13.1.x
+        stack: osx-xcode-15.0.x-edge
+        machine_type_id: g2-m1-max.5core
 app:
   envs:
   - opts:
