@@ -68,7 +68,7 @@ workflows:
         - is_enable_public_page: 'false'
     meta:
       bitrise.io:
-        stack: osx-xcode-16.2.x
+        stack: linux-docker-android-22.04
   deploy_ios:
     steps:
     - activate-ssh-key@4.1:
@@ -129,7 +129,7 @@ workflows:
         - is_enable_public_page: 'false'
     meta:
       bitrise.io:
-        stack: osx-xcode-16.2.x
+        stack: linux-docker-android-22.04
   deploy_firebase:
     steps:
     - activate-ssh-key@4.1:
@@ -205,7 +205,7 @@ workflows:
         - is_enable_public_page: 'false'
     meta:
       bitrise.io:
-        stack: osx-xcode-16.2.x
+        stack: linux-docker-android-22.04
   test:
     steps:
     - activate-ssh-key@4.1:
@@ -259,7 +259,7 @@ workflows:
         - is_enable_public_page: 'false'
     meta:
       bitrise.io:
-        stack: osx-xcode-16.2.x
+        stack: linux-docker-android-22.04
 app:
   envs:
   - opts:
