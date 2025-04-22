@@ -68,7 +68,7 @@ workflows:
         - is_enable_public_page: 'false'
     meta:
       bitrise.io:
-        stack: osx-xcode-13.1.x
+        stack: osx-xcode-16.2.x
   deploy_ios:
     steps:
     - activate-ssh-key@4.1:
@@ -129,7 +129,7 @@ workflows:
         - is_enable_public_page: 'false'
     meta:
       bitrise.io:
-        stack: osx-xcode-13.1.x
+        stack: osx-xcode-16.2.x
   deploy_firebase:
     steps:
     - activate-ssh-key@4.1:
@@ -205,7 +205,7 @@ workflows:
         - is_enable_public_page: 'false'
     meta:
       bitrise.io:
-        stack: osx-xcode-13.1.x
+        stack: osx-xcode-16.2.x
   test:
     steps:
     - activate-ssh-key@4.1:
@@ -259,7 +259,7 @@ workflows:
         - is_enable_public_page: 'false'
     meta:
       bitrise.io:
-        stack: osx-xcode-13.1.x
+        stack: osx-xcode-16.2.x
 app:
   envs:
   - opts:
