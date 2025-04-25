@@ -68,7 +68,8 @@ workflows:
         - is_enable_public_page: 'false'
     meta:
       bitrise.io:
-        stack: linux-docker-android-22.04
+        stack: linux-docker-android-20.04
+        machine_type_id: elite-xl
   deploy_ios:
     steps:
     - activate-ssh-key@4.1:
@@ -129,7 +130,7 @@ workflows:
         - is_enable_public_page: 'false'
     meta:
       bitrise.io:
-        stack: linux-docker-android-22.04
+        stack: linux-docker-android-20.04
         machine_type_id: elite-xl
   deploy_firebase:
     steps:
@@ -206,7 +207,8 @@ workflows:
         - is_enable_public_page: 'false'
     meta:
       bitrise.io:
-        stack: linux-docker-android-22.04
+        stack: linux-docker-android-20.04
+        machine_type_id: elite-xl
   test:
     steps:
     - activate-ssh-key@4.1:
@@ -261,6 +263,7 @@ workflows:
     meta:
       bitrise.io:
         stack: linux-docker-android-20.04
+        machine_type_id: elite-xl
 app:
   envs:
   - opts:
