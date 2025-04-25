@@ -130,6 +130,7 @@ workflows:
     meta:
       bitrise.io:
         stack: linux-docker-android-22.04
+        machine_type_id: elite-xl
   deploy_firebase:
     steps:
     - activate-ssh-key@4.1:
