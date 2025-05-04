@@ -211,6 +211,11 @@ workflows:
         machine_type_id: elite-xl
   test:
     steps:
+    - script@1.2:
+        title: 'Title'
+        inputs:
+        - content: |-
+            echo AAA
     - activate-ssh-key@4.1:
         run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
     - git-clone: {}
@@ -223,6 +228,7 @@ workflows:
         title: 'Get packages for carbon package'
         inputs:
         - content: |-
+            echo 1
             cd packages/flutter/
             flutter pub get
     - file-downloader@1.1:
